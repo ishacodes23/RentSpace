@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>My Bookings</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #f5f7fb, #e8ebf7);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        h2 {
+            color: #333;
+            margin: 0;
+            font-size: 28px;
+        }
+
+        .back {
+            text-decoration: none;
+            color: white;
+            background: linear-gradient(90deg, #6c5ce7, #a29bfe);
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: 0.3s;
+        }
+
+        .back:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(108, 92, 231, 0.3);
+        }
+
+        .card {
+            display: flex;
+            gap: 20px;
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            align-items: center;
+            transition: 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+        }
+
+        .card img {
+            width: 140px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 12px;
+            flex-shrink: 0;
+        }
+
+        .info {
+            flex: 1;
+        }
+
+        .info h3 {
+            color: #333;
+            margin: 0 0 8px 0;
+            font-size: 18px;
+        }
+
+        .info p {
+            color: #666;
+            margin: 5px 0;
+            font-size: 14px;
+        }
+
+        .price {
+            color: #6c5ce7;
+            font-weight: 700;
+            font-size: 18px;
+            margin: 10px 0 0 0;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            background: linear-gradient(90deg, #d63031, #ff7675);
+            color: white;
+            border-radius: 8px;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.3s;
+            white-space: nowrap;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(214, 48, 49, 0.3);
+        }
+
+        .empty-state {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            color: #999;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+
+        .empty-state h3 {
+            color: #666;
+            margin: 0 0 10px 0;
+        }
+
+        .empty-state p {
+            margin: 0 0 20px 0;
+            color: #999;
+        }
+
+        .empty-state a {
+            display: inline-block;
+            text-decoration: none;
+            color: white;
+            background: linear-gradient(90deg, #6c5ce7, #a29bfe);
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: 0.3s;
+        }
+
+        .empty-state a:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(108, 92, 231, 0.3);
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="top">
+        <h2>My Bookings</h2>
+        <a href="/properties" class="back">← Back to Properties</a>
+    </div>
+
+    <div th:if="${bookings.isEmpty()}" class="empty-state">
+        <h3>📦 No Bookings Yet</h3>
+        <p>You haven't booked any properties yet. Start exploring properties today!</p>
+        <a href="/properties">Browse Properties</a>
+    </div>
+
+    <div th:each="detail : ${bookings}" class="card">
+
+        <img th:src="@{'/images/' + ${detail.property.image}}" alt="${detail.property.name}">
+
+        <div class="info">
+            <h3 th:text="${detail.property.name}"></h3>
+            <p>📍 <span th:text="${detail.property.location}"></span></p>
+            <p class="price">₹<span th:text="${detail.property.price}"></span> / Night</p>
+            
+            <!-- ✅ NEW: Date range display -->
+            <div style="background: #f0f0f0; padding: 8px; border-radius: 6px; margin: 8px 0; font-size: 12px; color: #666;">
+                📅 <span th:text="${detail.booking.startDate}"></span> to <span th:text="${detail.booking.endDate}"></span>
+                <br>
+                <span style="font-weight: 600; color: #6c5ce7;" th:text="${detail.nights} + ' nights'"></span>
+            </div>
+        </div>
+
+        <a th:href="@{'/cancel/' + ${detail.booking.id}}" class="btn" onclick="return confirm('Are you sure you want to cancel this booking?');">
+            🗑️ Cancel
+        </a>
+
+    </div>
+
+</div>
+
+</body>
+</html>

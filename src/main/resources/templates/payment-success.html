@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Payment Success</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+            padding: 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            width: 380px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            animation: slideUp 0.5s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .checkmark {
+            font-size: 60px;
+            color: #00b894;
+            margin-bottom: 15px;
+        }
+
+        h2 {
+            color: #333;
+            margin: 0 0 10px 0;
+            font-size: 26px;
+        }
+
+        p {
+            color: #666;
+            margin: 10px 0 25px 0;
+            line-height: 1.6;
+        }
+
+        a, button {
+            display: block;
+            width: 100%;
+            text-decoration: none;
+            color: white;
+            background: linear-gradient(90deg, #6c5ce7, #a29bfe);
+            padding: 12px;
+            border-radius: 10px;
+            margin-top: 10px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: 0.3s;
+            box-sizing: border-box;
+        }
+
+        a:hover, button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(108, 92, 231, 0.3);
+        }
+
+        .secondary {
+            background: transparent;
+            color: #6c5ce7;
+            border: 2px solid #6c5ce7;
+        }
+
+        .secondary:hover {
+            background: #f5f7fb;
+        }
+
+        .success-text {
+            color: #00b894;
+            font-weight: 600;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="card">
+    <div class="checkmark">✅</div>
+    <h2>Payment Successful!</h2>
+    <p class="success-text">Your booking has been confirmed.</p>
+    <p>You will receive a confirmation email shortly with your booking details.</p>
+
+    <a href="/my-bookings">View My Bookings</a>
+    <a href="/properties" class="secondary">← Back to Properties</a>
+</div>
+
+</body>
+</html>

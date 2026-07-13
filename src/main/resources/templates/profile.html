@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Profile</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .card {
+            width: 380px;
+            background: white;
+            border-radius: 20px;
+            text-align: center;
+            padding: 40px 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            animation: slideUp 0.5s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            margin-bottom: 20px;
+            border: 4px solid #6c5ce7;
+            object-fit: cover;
+        }
+
+        h3 {
+            color: #333;
+            margin: 0 0 5px 0;
+            font-size: 22px;
+        }
+
+        p {
+            color: #999;
+            margin: 0 0 25px 0;
+            font-size: 14px;
+        }
+
+        .btn {
+            display: block;
+            margin: 12px 0;
+            padding: 12px 15px;
+            border-radius: 10px;
+            text-decoration: none;
+            color: white;
+            background: linear-gradient(90deg, #6c5ce7, #a29bfe);
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: 0.3s;
+            font-size: 14px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(108, 92, 231, 0.3);
+        }
+
+        .btn.secondary {
+            background: linear-gradient(90deg, #00b894, #55efc4);
+        }
+
+        .btn.secondary:hover {
+            box-shadow: 0 5px 15px rgba(0, 184, 148, 0.3);
+        }
+
+        .btn.logout {
+            background: linear-gradient(90deg, #d63031, #ff7675);
+        }
+
+        .btn.logout:hover {
+            box-shadow: 0 5px 15px rgba(214, 48, 49, 0.3);
+        }
+
+        .divider {
+            height: 1px;
+            background: #eee;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="card">
+
+    <img src="https://i.pravatar.cc/150?u=profile" class="avatar" alt="Profile">
+
+    <h3 th:text="${user.name}"></h3>
+    <p th:text="${user.email}"></p>
+
+    <a href="/edit-profile" class="btn">
+        ✏️ Edit Profile
+    </a>
+
+    <div class="divider"></div>
+
+    <a href="/my-bookings" class="btn secondary">
+        📦 My Bookings
+    </a>
+
+    <a href="/properties" class="btn secondary">
+        🏠 Browse Properties
+    </a>
+
+    <a href="/logout" class="btn logout">
+        🚪 Logout
+    </a>
+
+</div>
+
+</body>
+</html>

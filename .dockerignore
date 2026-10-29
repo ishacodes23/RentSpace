@@ -1,4 +1,7 @@
-.git
-.mvn
+target/
+.git/
+.gitignore
 *.md
-src
+.mvn/
+mvnw
+mvnw.cmd

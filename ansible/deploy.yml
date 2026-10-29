@@ -1,0 +1,42 @@
+- hosts: ec2
+  vars_files:
+    - /opt/rentspace/secrets.yml
+  tasks:
+    - name: Ensure network exists
+      community.docker.docker_network:
+        name: rentspace-net
+
+    - name: Run MySQL
+      community.docker.docker_container:
+        name: rentspace-mysql
+        image: mysql:8.0
+        state: started
+        restart_policy: unless-stopped
+        env:
+          MYSQL_ROOT_PASSWORD: "{{ db_root_password }}"
+          MYSQL_DATABASE: sb_rentaldb
+        volumes:
+          - rentspace-mysql-data:/var/lib/mysql
+        networks:
+          - name: rentspace-net
+
+    - name: Pull latest app image
+      community.docker.docker_image:
+        name: "{{ image }}"
+        source: pull
+        force_source: true
+
+    - name: Run RentSpace
+      community.docker.docker_container:
+        name: rentspace
+        image: "{{ image }}"
+        state: started
+        recreate: true
+        restart_policy: unless-stopped
+        published_ports: ["8081:8080"]
+        env:
+          DB_URL: "jdbc:mysql://rentspace-mysql:3306/sb_rentaldb"
+          DB_USER: root
+          DB_PASSWORD: "{{ db_root_password }}"
+        networks:
+          - name: rentspace-net

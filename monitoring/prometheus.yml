@@ -1,0 +1,27 @@
+global:
+  scrape_interval: 10s
+  evaluation_interval: 10s
+
+scrape_configs:
+  # 1. Host Metrics via Node Exporter (CPU, RAM, Disk, Network)
+  - job_name: 'node_exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+        labels:
+          instance: 'aws-ec2-host'
+
+  # 2. Container Metrics via cAdvisor (Per-Container CPU, Memory, Network)
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+        labels:
+          instance: 'docker-containers'
+
+  # 3. Application Metrics via Spring Boot Actuator (JVM Heap, Request Rate, Latency)
+  - job_name: 'rentspace_actuator'
+    metrics_path: '/actuator/prometheus'
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['rentspace-app:8080']
+        labels:
+          application: 'rentspace'

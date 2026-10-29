@@ -1,42 +1,47 @@
-- hosts: ec2
-  vars_files:
-    - /opt/rentspace/secrets.yml
+---
+- name: Deploy RentSpace Application and Monitoring Stack on AWS EC2
+  hosts: all
+  become: yes
+  vars:
+    project_dir: "/home/ubuntu/RentSpace"
+
   tasks:
-    - name: Ensure network exists
-      community.docker.docker_network:
-        name: rentspace-net
-
-    - name: Run MySQL
-      community.docker.docker_container:
-        name: rentspace-mysql
-        image: mysql:8.0
+    - name: Ensure Docker service is running and enabled
+      systemd:
+        name: docker
         state: started
-        restart_policy: unless-stopped
-        env:
-          MYSQL_ROOT_PASSWORD: "{{ db_root_password }}"
-          MYSQL_DATABASE: sb_rentaldb
-        volumes:
-          - rentspace-mysql-data:/var/lib/mysql
-        networks:
-          - name: rentspace-net
+        enabled: yes
 
-    - name: Pull latest app image
-      community.docker.docker_image:
-        name: "{{ image }}"
-        source: pull
-        force_source: true
+    - name: Create shared Docker bridge network for app and monitoring
+      docker_network:
+        name: rentspace-network
+        state: present
 
-    - name: Run RentSpace
-      community.docker.docker_container:
-        name: rentspace
-        image: "{{ image }}"
-        state: started
-        recreate: true
-        restart_policy: unless-stopped
-        published_ports: ["8081:8080"]
-        env:
-          DB_URL: "jdbc:mysql://rentspace-mysql:3306/sb_rentaldb"
-          DB_USER: root
-          DB_PASSWORD: "{{ db_root_password }}"
-        networks:
-          - name: rentspace-net
+    - name: Start Observability Stack (Node Exporter, cAdvisor, Prometheus, Grafana)
+      community.docker.docker_compose_v2:
+        project_src: "{{ project_dir }}/monitoring"
+        files:
+          - docker-compose-monitoring.yml
+        state: present
+
+    - name: Deploy RentSpace Application and MySQL Database
+      community.docker.docker_compose_v2:
+        project_src: "{{ project_dir }}"
+        files:
+          - docker-compose.yml
+        state: present
+        build: always
+
+    - name: Wait for RentSpace Spring Boot Application to become healthy
+      uri:
+        url: "http://localhost:8080/actuator/health"
+        status_code: 200
+        return_content: yes
+      register: app_health
+      until: "app_health.status == 200 and 'UP' in app_health.content"
+      retries: 15
+      delay: 5
+
+    - name: Print deployment success message
+      debug:
+        msg: "RentSpace application successfully deployed and reporting healthy! Actuator status: {{ app_health.json.status }}"

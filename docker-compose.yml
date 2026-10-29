@@ -46,4 +46,4 @@ volumes:
 
 networks:
   rentspace-network:
-    driver: bridge
+    name: rentspace-network

@@ -13,7 +13,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
  && git config --system --add safe.directory '*' \
  && rm -rf /var/lib/apt/lists/*
 
-RUN jenkins-plugin-cli --plugins git workflow-aggregator github pipeline-stage-view timestamps configuration-as-code job-dsl
+RUN jenkins-plugin-cli --plugins git workflow-aggregator github pipeline-stage-view timestamper configuration-as-code job-dsl
 
 COPY casc.yaml /casc/casc.yaml
 ENV CASC_JENKINS_CONFIG=/casc/casc.yaml

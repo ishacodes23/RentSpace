@@ -1,3 +1,4 @@
+# Windows (PowerShell): create jenkins-local\.env containing  DEPLOY_DIR=/c/Users/<you>/rentspace-deploy   (see docs/LOCAL_TEST.md)
 # Run from this folder:  docker compose up -d --build     ->  http://localhost:8081  (admin / admin)
 services:
   jenkins:
@@ -10,7 +11,9 @@ services:
       REPO_BRANCH: ${REPO_BRANCH:-feature/docker-ansible}
       DEPLOY_DIR: ${DEPLOY_DIR:-${HOME}/rentspace-deploy}
       DEPLOY_OWNER: root
+      JAVA_OPTS: "-Djenkins.install.runSetupWizard=false -Dhudson.plugins.git.GitSCM.ALLOW_LOCAL_CHECKOUT=true"
       USE_BECOME: "false"
+      FIX_OWNER: "false"
       APP_HOST: host.docker.internal
     extra_hosts:
       - "host.docker.internal:host-gateway"

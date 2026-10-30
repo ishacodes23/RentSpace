@@ -1,0 +1,31 @@
+jenkins:
+  systemMessage: "RentSpace local Jenkins (test before pushing to GitHub)"
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+        - id: "admin"
+          password: "admin"
+  authorizationStrategy:
+    loggedInUsersCanDoAnything:
+      allowAnonymousRead: false
+unclassified:
+  location:
+    url: "http://localhost:8081/"
+jobs:
+  - script: |
+      pipelineJob('RentSpace-Pipeline') {
+        description('Builds + deploys RentSpace from the LOCAL repo mounted at /repo')
+        triggers { scm('H/2 * * * *') }
+        definition {
+          cpsScm {
+            scm {
+              git {
+                remote { url('file:///repo') }
+                branches('*/${REPO_BRANCH:-feature/docker-ansible}')
+              }
+            }
+            scriptPath('Jenkinsfile')
+          }
+        }
+      }

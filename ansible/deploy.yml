@@ -1,19 +1,47 @@
 ---
 - name: Deploy RentSpace Application and Monitoring Stack on AWS EC2
-  hosts: all
-  become: yes
+  hosts: local
+  become: "{{ use_become | default(true) | bool }}"
   vars:
-    project_dir: "/home/ubuntu/RentSpace"
+    project_dir: "{{ lookup('env', 'DEPLOY_DIR') | default('/home/ubuntu/RentSpace', true) }}"
+    deploy_owner: "{{ lookup('env', 'DEPLOY_OWNER') | default('ubuntu', true) }}"
+    app_host: "{{ lookup('env', 'APP_HOST') | default('localhost', true) }}"
+    # Jenkins passes -e source_dir=$WORKSPACE so the freshly checked-out code is what gets deployed
+    source_dir: "{{ lookup('env', 'WORKSPACE') | default(playbook_dir + '/..', true) }}"
 
   tasks:
-    - name: Ensure Docker service is running and enabled
+    - name: Ensure Docker service is running and enabled (skipped inside containers / Docker Desktop)
       systemd:
         name: docker
         state: started
         enabled: yes
+      when: ansible_service_mgr == 'systemd'
+
+    - name: Ensure project directory exists
+      file:
+        path: "{{ project_dir }}"
+        state: directory
+        owner: "{{ deploy_owner }}"
+        group: "{{ deploy_owner }}"
+        mode: "0755"
+
+    - name: Sync latest code from Jenkins workspace to deployment directory
+      command: >
+        rsync -a --delete
+        --exclude .git --exclude target
+        "{{ source_dir }}/" "{{ project_dir }}/"
+      when: (source_dir | realpath) != (project_dir | realpath)
+      changed_when: true
+
+    - name: Fix ownership of deployment directory
+      file:
+        path: "{{ project_dir }}"
+        owner: "{{ deploy_owner }}"
+        group: "{{ deploy_owner }}"
+        recurse: yes
 
     - name: Create shared Docker bridge network for app and monitoring
-      docker_network:
+      community.docker.docker_network:
         name: rentspace-network
         state: present
 
@@ -24,7 +52,7 @@
           - docker-compose-monitoring.yml
         state: present
 
-    - name: Deploy RentSpace Application and MySQL Database
+    - name: Deploy RentSpace Application and MySQL Database (rebuild image from latest code)
       community.docker.docker_compose_v2:
         project_src: "{{ project_dir }}"
         files:
@@ -34,14 +62,14 @@
 
     - name: Wait for RentSpace Spring Boot Application to become healthy
       uri:
-        url: "http://localhost:8080/actuator/health"
+        url: "http://{{ app_host }}:8080/actuator/health"
         status_code: 200
         return_content: yes
       register: app_health
       until: "app_health.status == 200 and 'UP' in app_health.content"
-      retries: 15
+      retries: 24
       delay: 5
 
     - name: Print deployment success message
       debug:
-        msg: "RentSpace application successfully deployed and reporting healthy! Actuator status: {{ app_health.json.status }}"
+        msg: "RentSpace deployed and healthy! Actuator status: {{ app_health.json.status }}"

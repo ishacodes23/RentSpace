@@ -29,3 +29,19 @@ jobs:
           }
         }
       }
+  - script: |
+      pipelineJob('RentSpace-EC2-Pipeline') {
+        description('Builds on this laptop, ships the image to the EC2 server and deploys with Ansible. Triggered by pushes to GitHub (polled).')
+        triggers { scm('H/2 * * * *') }
+        definition {
+          cpsScm {
+            scm {
+              git {
+                remote { url('https://github.com/ishacodes23/RentSpace.git') }
+                branches('*/${REPO_BRANCH:-feature/docker-ansible}')
+              }
+            }
+            scriptPath('Jenkinsfile.ec2')
+          }
+        }
+      }

@@ -22,6 +22,7 @@ services:
       - rentspace-network
 
   rentspace-app:
+    image: rentspace-app:latest
     build:
       context: .
       dockerfile: Dockerfile

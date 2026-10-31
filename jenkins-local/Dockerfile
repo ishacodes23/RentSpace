@@ -3,7 +3,7 @@ FROM jenkins/jenkins:lts-jdk17
 USER root
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      ca-certificates curl gnupg rsync git python3 python3-pip \
+      ca-certificates curl gnupg rsync git openssh-client python3 python3-pip \
  && install -m 0755 -d /etc/apt/keyrings \
  && curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc \
  && . /etc/os-release \

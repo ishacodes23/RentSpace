@@ -15,11 +15,13 @@ services:
       USE_BECOME: "false"
       FIX_OWNER: "false"
       APP_HOST: host.docker.internal
+      EC2_HOST: ${EC2_HOST:-65.0.6.71}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
       - jenkins_home:/var/jenkins_home
       - /var/run/docker.sock:/var/run/docker.sock
+      - ${KEY_DIR:-${HOME}/keys}:/keys:ro               # folder containing rentspace-key.pem
       - ..:/repo:ro                                   # your local repo = the "GitHub" for this test
       # Same path inside and outside so docker compose bind-mounts resolve on the host:
       - ${DEPLOY_DIR:-${HOME}/rentspace-deploy}:${DEPLOY_DIR:-${HOME}/rentspace-deploy}

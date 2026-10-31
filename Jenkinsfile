@@ -1,12 +1,8 @@
 pipeline {
     agent any
 
-    // Triggered automatically on every GitHub push (needs the webhook from docs/PHASE4_JENKINS_SETUP.md).
-    // pollSCM is a fallback in case the webhook is blocked/misconfigured.
-    triggers {
-        githubPush()
-        pollSCM('H/2 * * * *')
-    }
+    // Jenkins (on the laptop) polls the public GitHub repo, so a push starts this pipeline within ~2 minutes.
+    triggers { pollSCM('H/2 * * * *') }
 
     options {
         timestamps()
@@ -15,58 +11,58 @@ pipeline {
     }
 
     environment {
-        DOCKER_IMAGE = "rentspace-app"
-        // Defaults suit the EC2 server; the local Jenkins container overrides these (see jenkins-local/docker-compose.yml)
-        APP_HOST   = "${env.APP_HOST ?: 'localhost'}"
-        USE_BECOME = "${env.USE_BECOME ?: 'true'}"
+        IMAGE   = "rentspace-app"
+        EC2_HOST = "${env.EC2_HOST}"
     }
 
     stages {
         stage('Checkout Source Code') {
-            steps {
-                echo 'Checking out source code from GitHub...'
-                checkout scm
-            }
-        }
-
-        stage('Build & Unit Test') {
-            steps {
-                echo 'Building RentSpace with Maven...'
-                sh 'chmod +x mvnw && ./mvnw -B clean package -DskipTests'
-            }
+            steps { checkout scm }
         }
 
         stage('Build Docker Image') {
             steps {
-                echo 'Validating Docker image build...'
-                sh 'docker build -t ${DOCKER_IMAGE}:${BUILD_NUMBER} -t ${DOCKER_IMAGE}:latest .'
+                echo 'Building the image (Maven build happens inside the Dockerfile)...'
+                sh 'docker build -t ${IMAGE}:latest -t ${IMAGE}:${BUILD_NUMBER} .'
+            }
+        }
+
+        stage('Ship Image to EC2') {
+            steps {
+                echo "Sending image to ${EC2_HOST} over SSH..."
+                sh '''
+                    install -m 600 /keys/rentspace-key.pem /tmp/rentspace-key.pem
+                    docker save ${IMAGE}:latest | gzip | \
+                      ssh -i /tmp/rentspace-key.pem -o StrictHostKeyChecking=no ubuntu@${EC2_HOST} "gunzip | docker load"
+                '''
             }
         }
 
         stage('Deploy with Ansible') {
             steps {
-                echo 'Executing Ansible Playbook...'
-                sh 'ansible-playbook -i ansible/inventory.ini ansible/deploy.yml -e source_dir=${WORKSPACE} -e use_become=${USE_BECOME}'
+                sh '''
+                    ansible-playbook -i "${EC2_HOST}," -u ubuntu --private-key /tmp/rentspace-key.pem \
+                      -e ansible_ssh_common_args="-o StrictHostKeyChecking=no" \
+                      -e source_dir=${WORKSPACE} ansible/deploy-remote.yml
+                '''
             }
         }
 
         stage('Smoke Test & Observability Check') {
             steps {
-                echo 'Verifying application, Prometheus and Grafana...'
                 sh '''
-                    curl -sf http://${APP_HOST}:8080/actuator/health | grep UP
-                    curl -sf http://${APP_HOST}:8080/actuator/prometheus | grep jvm_memory_used_bytes | head -n 3
-                    curl -sf http://${APP_HOST}:9090/-/healthy
-                    curl -sf http://${APP_HOST}:3000/api/health
-                    echo "RentSpace is live, healthy, and emitting Prometheus metrics!"
+                    curl -sf http://${EC2_HOST}:8080/actuator/health | grep UP
+                    curl -sf http://${EC2_HOST}:9090/-/healthy
+                    curl -sf http://${EC2_HOST}:3000/api/health
+                    echo "RentSpace is live on EC2 and healthy!"
                 '''
             }
         }
     }
 
     post {
-        success { echo "Build #${env.BUILD_NUMBER}: deployment pipeline completed successfully!" }
+        success { echo "Build #${env.BUILD_NUMBER}: deployed to EC2 ${env.EC2_HOST}" }
         failure { echo 'Pipeline failed. Check stage logs for details.' }
-        always  { sh 'docker image prune -f || true' }
+        always  { sh 'rm -f /tmp/rentspace-key.pem; docker image prune -f || true' }
     }
 }

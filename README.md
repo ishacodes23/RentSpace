@@ -188,3 +188,5 @@ This project was developed for academic and learning purposes.
 
 MCA Student | Java Full Stack Developer | Spring Boot Developer
 CI/CD test
+
+EC2 pipeline test

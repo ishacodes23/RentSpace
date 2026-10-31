@@ -1,0 +1,84 @@
+---
+# Deploys RentSpace to the (free-tier) EC2 server. The Docker image is built by Jenkins on the
+# laptop and loaded on the server beforehand, so the server never compiles anything.
+- name: Deploy RentSpace and monitoring stack to EC2
+  hosts: all
+  become: true
+  vars:
+    deploy_dir: /home/ubuntu/rentspace-deploy
+    source_dir: "{{ lookup('env', 'WORKSPACE') | default(playbook_dir + '/..', true) }}"
+
+  tasks:
+    - name: Check docker compose v2 is available
+      command: docker compose version
+      register: compose_check
+      changed_when: false
+      failed_when: false
+
+    - name: Install docker compose v2 plugin if missing
+      apt:
+        name: docker-compose-v2
+        state: present
+        update_cache: yes
+      when: compose_check.rc != 0
+
+    - name: Create deployment directories
+      file:
+        path: "{{ item }}"
+        state: directory
+        owner: ubuntu
+        group: ubuntu
+        mode: "0755"
+      loop:
+        - "{{ deploy_dir }}"
+        - "{{ deploy_dir }}/monitoring"
+
+    - name: Copy docker-compose.yml
+      copy:
+        src: "{{ source_dir }}/docker-compose.yml"
+        dest: "{{ deploy_dir }}/docker-compose.yml"
+        owner: ubuntu
+        group: ubuntu
+
+    - name: Copy monitoring configs (Prometheus + Grafana provisioning)
+      copy:
+        src: "{{ source_dir }}/monitoring/"
+        dest: "{{ deploy_dir }}/monitoring/"
+        owner: ubuntu
+        group: ubuntu
+
+    - name: Ensure shared Docker network exists
+      shell: docker network inspect rentspace-network >/dev/null 2>&1 || docker network create rentspace-network
+      changed_when: false
+
+    - name: Start monitoring stack (Node Exporter, cAdvisor, Prometheus, Grafana)
+      community.docker.docker_compose_v2:
+        project_src: "{{ deploy_dir }}/monitoring"
+        project_name: monitoring
+        files:
+          - docker-compose-monitoring.yml
+        state: present
+        pull: never
+
+    - name: Deploy RentSpace app + MySQL using the image shipped by Jenkins
+      community.docker.docker_compose_v2:
+        project_src: "{{ deploy_dir }}"
+        project_name: rentspace
+        files:
+          - docker-compose.yml
+        state: present
+        build: never
+        pull: never
+
+    - name: Wait for RentSpace to become healthy
+      uri:
+        url: "http://localhost:8080/actuator/health"
+        return_content: yes
+      register: app_health
+      until: "app_health.status == 200 and 'UP' in app_health.content"
+      retries: 30
+      delay: 10
+
+    - name: Report
+      debug:
+        msg: "RentSpace deployed on EC2, health: {{ app_health.json.status }}"

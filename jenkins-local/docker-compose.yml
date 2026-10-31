@@ -1,0 +1,29 @@
+# Windows (PowerShell): create jenkins-local\.env containing  DEPLOY_DIR=/c/Users/<you>/rentspace-deploy   (see docs/LOCAL_TEST.md)
+# Run from this folder:  docker compose up -d --build     ->  http://localhost:8081  (admin / admin)
+services:
+  jenkins:
+    build: .
+    container_name: jenkins-local
+    user: root
+    ports:
+      - "8081:8080"            # Jenkins UI on 8081 (RentSpace itself uses 8080)
+    environment:
+      REPO_BRANCH: ${REPO_BRANCH:-feature/docker-ansible}
+      DEPLOY_DIR: ${DEPLOY_DIR:-${HOME}/rentspace-deploy}
+      DEPLOY_OWNER: root
+      JAVA_OPTS: "-Djenkins.install.runSetupWizard=false -Dhudson.plugins.git.GitSCM.ALLOW_LOCAL_CHECKOUT=true"
+      USE_BECOME: "false"
+      FIX_OWNER: "false"
+      APP_HOST: host.docker.internal
+      EC2_HOST: ${EC2_HOST:-65.0.6.71}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${KEY_DIR:-${HOME}/keys}:/keys:ro               # folder containing rentspace-key.pem
+      - ..:/repo:ro                                   # your local repo = the "GitHub" for this test
+      # Same path inside and outside so docker compose bind-mounts resolve on the host:
+      - ${DEPLOY_DIR:-${HOME}/rentspace-deploy}:${DEPLOY_DIR:-${HOME}/rentspace-deploy}
+volumes:
+  jenkins_home:

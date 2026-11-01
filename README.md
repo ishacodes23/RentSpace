@@ -205,3 +205,5 @@ Dockerfile        application image
 docker-compose.yml  application + database
 Jenkinsfile       pipeline used by the EC2 Jenkins job
 ```
+## CI/CD
+Jenkins pipeline: GitHub push -> Jenkins build -> Docker image -> Ansible deploy -> AWS EC2 (monitored by Prometheus and Grafana).

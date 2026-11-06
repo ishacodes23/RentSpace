@@ -29,7 +29,7 @@ pipeline {
             }
         }
 
-        stage('Build & Unit Test') {
+        stage('Build') {
             steps {
                 echo 'Building RentSpace with Maven...'
                 sh 'chmod +x mvnw && ./mvnw -B clean package -DskipTests'
